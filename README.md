@@ -1,26 +1,24 @@
-# ML Class Project Template (Based on NEDS)
+# ML Class Project Template
 
-This repo is set up as a class-ready project template derived from the NEDS research codebase. It keeps a realistic structure (data, scripts, configs, training code) while adding student-facing guidance for scoping, experimentation, and reporting.
+This repo is set up as a class project template derived from a research project codebase. It keeps a realistic structure (data, scripts, configs, training code) while adding guidance for scoping, experimentation, and reporting.
 
-If you want the original NEDS research README, see `docs/README_NEDS.md`.
+If you want to refer to the `README` in the original codebase, see `docs/README_NEDS.md`.
 
 ## Quick Start (Students)
 
 1. Read the project brief and fill in your scope: `docs/PROJECT_TEMPLATE.md`.
-2. Set up the environment:
+2. Set up the environment. **Replace the environment name and Python package dependencies with your own.**
    ```bash
    conda env create -f env.yaml
-   conda activate neds
+   conda activate YOUR_ENV_NAME
    ```
-3. Add your data or update `data/` with links/instructions.
-4. Start from a baseline in `src/` and log all runs via `script/`.
 
 ## Recommended Repo Layout
 
-Use the existing folders and add to them:
+Use the existing folder structure, but **replace it with your own files**:
 
 - `src/`: core model, training, evaluation, and utilities.
-- `script/`: run scripts that record exact commands.
+- `script/`: run scripts that record exact command-line commands when running on a cluster.
 - `data/`: small metadata files or pointers to datasets.
 - `assets/`: figures for the final report.
 - `docs/`: project brief, milestones, and writeups.
@@ -28,14 +26,13 @@ Use the existing folders and add to them:
 ## What Students Must Deliver
 
 - A clearly scoped research question and hypothesis.
-- A baseline implementation and at least one improved variant.
+- A model implementation, with corresponding training and evaluation code.
 - A reproducible experiment log with metrics and plots.
-- A short report and a demo (notebook or script).
 
 ## Instructor Notes
 
-- The original NEDS training/eval scripts are intact for realism.
+- The training/eval scripts in the original codebase are intact for your reference.
 - You can swap datasets by updating `data/` and the relevant loaders in `src/`.
-- Suggested milestones and grading rubric are in `docs/PROJECT_TEMPLATE.md`.
+- Suggested milestones are in `docs/PROJECT_TEMPLATE.md`.
 
 

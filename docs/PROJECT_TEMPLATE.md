@@ -44,23 +44,10 @@ Fill in this document at the start of the project and keep it up to date.
 - **How to run evaluation**:
 - **Where you log results** (files/paths):
 
-## 8) Deliverables
-
-- **Report** (target length and sections):
-- **Demo** (notebook or script + what it shows):
-- **Final results table**:
 
 ## 9) Milestones (Suggested)
 
 - Week 1: scope, data access, baseline running
 - Week 2: first model change + results
 - Week 3: ablations + error analysis
-- Week 4: final report + demo
-
-## 10) Grading Rubric (Suggested)
-
-- 30% clarity of problem + hypothesis
-- 30% experimental design + baselines
-- 30% results + analysis
-- 10% reproducibility + code quality
-
+- Week 4: final report
