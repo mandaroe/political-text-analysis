@@ -4,7 +4,17 @@ This repo is set up as a class project template derived from a research project 
 
 If you want to refer to the `README` in the original codebase, see `docs/README_NEDS.md`.
 
-## Quick Start (Students)
+## Fork This Repo
+
+1. Click the **Fork** button on GitHub to create your own copy.
+2. Clone your fork locally:
+   ```bash
+   git clone https://github.com/YOUR_USERNAME/ml-class-project-template.git
+   cd ml-class-project-template
+   ```
+3. Rename the repo on GitHub to match your project.
+
+## Quick Start
 
 1. Read the project brief and fill in your scope: `docs/PROJECT_TEMPLATE.md`.
 2. Set up the environment. **Replace the environment name and Python package dependencies with your own.**
