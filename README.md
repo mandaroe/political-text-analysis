@@ -32,7 +32,6 @@ Use the existing folder structure, but **replace it with your own files**:
 ## Instructor Notes
 
 - The training/eval scripts in the original codebase are intact for your reference.
-- You can swap datasets by updating `data/` and the relevant loaders in `src/`.
-- Suggested milestones are in `docs/PROJECT_TEMPLATE.md`.
+- Suggested workflows are outlined in `docs/PROJECT_TEMPLATE.md`.
 
 

@@ -44,10 +44,3 @@ Fill in this document at the start of the project and keep it up to date.
 - **How to run evaluation**:
 - **Where you log results** (files/paths):
 
-
-## 9) Milestones (Suggested)
-
-- Week 1: scope, data access, baseline running
-- Week 2: first model change + results
-- Week 3: ablations + error analysis
-- Week 4: final report
