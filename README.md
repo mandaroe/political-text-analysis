@@ -38,6 +38,7 @@ Use the existing folder structure, but **replace it with your own files**:
 - A clearly scoped research question and hypothesis.
 - A model implementation, with corresponding training and evaluation code.
 - A reproducible experiment log with metrics and plots.
+- **A final project report hosted using GitHub Pages** (see `docs/README_NEDS.md` for an example of the hosted project page.)
 
 ## Instructor Notes
 
