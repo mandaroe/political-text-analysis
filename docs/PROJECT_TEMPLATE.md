@@ -2,8 +2,8 @@
 
 ## 1) Project Overview
 
-- **Title:** Red, Blue, and Something New?
-- **Team:** Amanda & Sophia
+- **Title:** Red, Blue, or Something New?: A Study of Political Text Classification
+- **Team:** Amanda Rolle & Sophia Abate
 - **Problem statement:**
     Can a continuous ideological dimension be constructed from political texts,
     and what linguistic features most strongly structure that dimension?
