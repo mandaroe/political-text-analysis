@@ -1,13 +1,13 @@
-# Class Project Template
-
-Fill in this document at the start of the project and keep it up to date.
+# Political Text Analysis
 
 ## 1) Project Overview
 
-- **Title**:
-- **Team**:
-- **Problem statement** (1-3 sentences):
-- **Hypothesis** (what you expect to happen and why):
+- **Title:** Red, Blue, and Something New?
+- **Team:** Amanda & Sophia
+- **Problem statement:**
+    Can a continuous ideological dimension be constructed from political texts,
+    and what linguistic features most strongly structure that dimension?
+- **Hypothesis:**
 
 ## 2) Related Work (Short)
 
@@ -15,7 +15,9 @@ Fill in this document at the start of the project and keep it up to date.
 
 ## 3) Data
 
-- **Dataset(s)**:
+- **Dataset(s):**
+  - [uscongress](https://ropengov.github.io/uscongress/)
+  - [AllSideR](https://github.com/favstats/AllSideR)
 - **How to access** (links or scripts):
 - **License/ethics**:
 - **Train/val/test split**:
