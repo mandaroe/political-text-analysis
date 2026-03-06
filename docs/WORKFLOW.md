@@ -3,23 +3,13 @@
 ## Navigating GitHub
 
 **Google Colab**
-Check if Git is installed
+
 ```python
+# Check if Git is installed
 !git --version
-```
 
-If not...
-```python
-!apt-get install git
-```
-
-Clone Repo
-```python
+# Clone Repo & Pull updates
 !git clone https://github.com/username/political-text-analysis.git
-```
-
-Pull updates
-```python
 !git pull
 ```
 
@@ -39,8 +29,8 @@ from datasets import load_dataset
 
 dataset = load_dataset("Eugleo/us-congressional-speeches")
 ```
-
-More information [here](https://huggingface.co/datasets/Eugleo/us-congressional-speeches)
+- Need to access personal HuggingFace Token
+- More information on dataset [here](https://huggingface.co/datasets/Eugleo/us-congressional-speeches)
 
 
 **Congress Members:**
@@ -96,3 +86,23 @@ cong.subset <- CongressData |>
   mutate(year = as.character(year)) |> 
   rename(state = st)
 ```
+
+## Baseline Models
+
+**TF-IDF**
+$$
+tf(t,d) = \frac{f_d(t_i)}{maxf_d(w)}
+$$
+
+$$
+idf(t, D) = log{\frac{D}{1 + DF(t)}}
+$$
+
+$$
+TF-IDF(t,d) - tf(t,d) \times idf(t, D)
+$$
+
+- $f_d(t)$: frequency of term *t* in document *d*
+- $maxf_d(w)$: total number of terms in document *d*
+- $D$: total number of documents in corpus
+- $DF(T)$: number of documents containing term *t*
