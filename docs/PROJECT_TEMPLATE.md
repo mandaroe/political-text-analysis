@@ -2,12 +2,11 @@
 
 ## 1) Project Overview
 
-- **Title:** Red, Blue, or Something New?: A Study of Political Text Classification
-- **Team:** Amanda Rolle & Sophia Abate
+- **Title:** Learning to Read Politics: Machine Learning and the Distinction between Topic and Stance
+- **Team:** Sophia Abate & Amanda Rolle
 - **Problem statement:**
-    Can a continuous ideological dimension be constructed from political texts,
-    and what linguistic features most strongly structure that dimension?
-- **Hypothesis:**
+    Do standard text representation conflate topic similarity and stance?
+- **Hypothesis:** 
 
 ## 2) Related Work (Short)
 
@@ -16,16 +15,50 @@
 ## 3) Data
 
 - **Dataset(s):**
-  - [uscongress](https://ropengov.github.io/uscongress/)
-  - [AllSideR](https://github.com/favstats/AllSideR)
-- **How to access** (links or scripts):
+  - OpenGov uscongress: Congressional Record collection for a given session or date range. Used in this to retrieve speeches and speakers.
+  - AllSides Media Bias: Categorical political leaning rating of media news bias on a scale of: left, left-center, center, right-center, right.
+  - Congress: Congression collection of actions, bills, nomination, and more more. Used in this study for member identification.
+  
+- **How to access:**
+  - [US-Congressional-Speeches](https://huggingface.co/datasets/Eugleo/us-congressional-speeches)
+  
 - **License/ethics**:
 - **Train/val/test split**:
 
 ## 4) Baseline
 
-- **Baseline model** (name + key params):
+- **Baseline model**: (name + key params)
+    - Topic Frequency-Inverse Document Frequency (TF-IDF) & Logistic Regression
+        - ngram_range: 
+        - max_features:
+        - min_df/max_df:
+        - use_idf:
+        - smooth_idf:
+        - sublinear_tf:
+        - penalty:
+        - solver:
+        - regularization:
+    - Stance-DW 
+        - dim: embedding size
+        - window size:
+        - negative sampling:
+        - hierarchial softmax:
+        - learning rate:
+        - epochs:
+        - Stance weighting:
 - **Baseline metrics**:
+    - TF-IDF:
+        - Accuracy
+        - Confusion Matrix
+        - Macro vs Micro F1-score
+        - ROC-AUC
+    - Stance-DW
+        - Same as TF-IDF (for classification metrics)
+        - Cosine similarity
+        - Silhouette score
+        - Adjusted Rand Index (ARI)
+        - t-SNE
+        - UMAP
 - **Why this is a fair baseline**:
 
 ## 5) Proposed Method

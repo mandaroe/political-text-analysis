@@ -1,29 +1,64 @@
 # Workflow
 
+## Navigating GitHub
+
+**Google Colab**
+Check if Git is installed
+```python
+!git --version
+```
+
+If not...
+```python
+!apt-get install git
+```
+
+Clone Repo
+```python
+!git clone https://github.com/username/political-text-analysis.git
+```
+
+Pull updates
+```python
+!git pull
+```
+
+
 ## Data Collection
 
 **Congressional Speeches:**
 
-```r
-library(uscongress)
-speeches <- get_congressional_records(
-    API_KEY = "INPUT KEY",
-    max_results = 100,
-    congress_session = 117)
+```python
+import os
+from huggingface_hub import login
+
+token = os.getenv("HF_TOKEN")
+login(token=token)
+
+from datasets import load_dataset
+
+dataset = load_dataset("Eugleo/us-congressional-speeches")
 ```
 
-Get GovInfo API Key [here](https://api.govinfo.gov/docs/)
+More information [here](https://huggingface.co/datasets/Eugleo/us-congressional-speeches)
 
-```r
-saveRDS(s_speeches, "data/s_speeches.rds")
-```
-Save data locally!
 
 **Congress Members:**
+Get Congress.gov API Key [here](https://api.congress.gov/sign-up/)
 
 ```r
-library(CongressData)
-congress.data <- get_cong_data()
+usethis::edit_r_environ() # open .Renviron
+
+CONGRESS_KEY= YOUR API # save environ, then restart R
+```
+
+```r
+Sys.getenv("CONGRESS_KEY") # check Key
+```
+
+```r
+library(congress)
+cong_member(congress = 117)
 ```
 
 **Media Bias Rating:**
