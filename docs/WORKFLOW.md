@@ -90,6 +90,7 @@ cong.subset <- CongressData |>
 ## Baseline Models
 
 **TF-IDF**
+
 $$
 tf(t,d) = \frac{f_d(t_i)}{maxf_d(w)}
 $$
@@ -106,3 +107,21 @@ $$
 - $maxf_d(w)$: total number of terms in document *d*
 - $D$: total number of documents in corpus
 - $DF(T)$: number of documents containing term *t*
+
+**Interpretation**
+- High TF-IDF indicates important term in that document
+- Low TF-IDF indicates common, non-distinctive term
+
+**Basic Implementation**
+
+```python
+from sklearn.feature_extraction.text import TfidVectorizer
+
+corpus = data.frame['text]
+
+vectorizer = TfidfVectorizer()
+X = vectorizer.fit_transform(corpus)
+
+print(vectorizer.get_feature_names_out())
+print(X.toarray())
+```
