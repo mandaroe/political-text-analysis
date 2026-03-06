@@ -2,7 +2,7 @@
 
 ## Navigating GitHub
 
-**Google Colab**
+**Google Colab (one time only)**
 
 ```python
 # Check if Git is installed
@@ -12,7 +12,17 @@
 !git clone https://github.com/username/political-text-analysis.git
 !git pull
 ```
+**Locally Stored Files (edited in RStudio)
 
+```PowerShell
+# Push
+git add .
+git commit -m "message"
+git push
+
+# Pull
+git pull
+```
 
 ## Data Collection
 
