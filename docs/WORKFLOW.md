@@ -12,7 +12,7 @@
 !git clone https://github.com/username/political-text-analysis.git
 !git pull
 ```
-**Locally Stored Files (edited in RStudio)
+**Locally Stored Files (edited in RStudio)**
 
 ```PowerShell
 # Push
@@ -43,59 +43,35 @@ dataset = load_dataset("Eugleo/us-congressional-speeches")
 - More information on dataset [here](https://huggingface.co/datasets/Eugleo/us-congressional-speeches)
 
 
-**Congress Members:**
-Get Congress.gov API Key [here](https://api.congress.gov/sign-up/)
+## Data Processing
 
-```r
-usethis::edit_r_environ() # open .Renviron
+**Split Train/Val/Test
 
-CONGRESS_KEY= YOUR API # save environ, then restart R
+```python
+import os
+from huggingface_hub import login
+
+token = os.getenv("HF_TOKEN")
+login(token=token)
+
+from datasets import load_dataset
+dataset = load_dataset("Eugleo/us-conghressional-speeches")
+
+sample_speech = dataset.shuffle(seed = 33).select(range(1000))
+
+split1 = sample_speech.train_test_split(test_size = 0.3, seed = 33)
+
+train = split1["train"]
+temp = split1["test"]
+
+split2 = temp.train_test_split(test_size = 0.5, seed = 33)
+
+val = split2["train"]
+test = split2["test"]
 ```
 
-```r
-Sys.getenv("CONGRESS_KEY") # check Key
-```
-
-```r
-library(congress)
-cong_member(congress = 117)
-```
-
-**Media Bias Rating:**
-
-```r
-library(AllSideR)
-allsides_data <- allsides_data
-```
-
-## Data Preprocessing
-
-**Assigning Party to Speeches**
-
-```r
-library(stringr)
-library(dplyr)
-speeches <- speeches %>%
-  mutate(
-    lastname = str_extract(speaker, "(?<=\\b(Mr\\.|Ms\\.|Rep\\.)\\s)[A-Z]+"),
-    lastname = if_else(
-      is.na(lastname),
-      str_extract(speaker, "(?<=\\s)[A-Z]+(?=\\s+of)"),
-      lastname),
-      
-    lastname = str_to_title(str_to_lower(lastname)),
-    state_full = str_extract(speaker, "(?<=of\\s)[A-Za-z\\s]+"),
-    state = state.abb[match(state_full, state.name)],
-    year = format(as.Date(date, format = "%Y-%m-%d"), "%Y"))
-```
-
-```r
-cong.subset <- CongressData |> 
-  filter(year==2021 | year==2022 | year==2023) |> 
-  select(party, lastname, year, st) |> 
-  mutate(year = as.character(year)) |> 
-  rename(state = st)
-```
+- For now, we split 1000 speeches for simplicity.
+- Can update later.
 
 ## Baseline Models
 
