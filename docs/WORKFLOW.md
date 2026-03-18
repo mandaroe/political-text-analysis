@@ -39,17 +39,11 @@ hf_token = getpass("Enter your Hugging Face token: ")
 
 dataset = load_dataset("Eugleo/us-congressional-speeches", use_auth_token = hf_token)
 ```
-- Loding takes about 10 minutes, save to disk after preprocessing
+- Loading takes about 10 minutes
 - Need to access personal HuggingFace Token
 - More information on dataset [here](https://huggingface.co/datasets/Eugleo/us-congressional-speeches)
 
 **Congress Metadata:**
-
-We use Member Ideology Data from VoteView (can be found [here](https://voteview.com/data))
-- Data Type: Member Ideology
-- Chamber: Both(House and Senate)
-- Congress: 116th (2019-2021)
-- File Format: CSV
 
 ```python
 from google.colab import files
@@ -57,8 +51,12 @@ import pandas as pd
 
 bioid = files.upload()
 ```
-- Download data locally
-- Choose file after running code
+- Download data locally, then choose file after running code
+- We use Member Ideology Data from VoteView (can be found [here](https://voteview.com/data))
+  - Data Type: Member Ideology
+  - Chamber: Both(House and Senate)
+  - Congress: 116th (2019-2021)
+  - File Format: CSV
 
 
 ## Data Processing
@@ -68,27 +66,30 @@ bioid = files.upload()
 ```python
 filename = list(bioid.keys())[0]
 
-df_members = pd.read_csv(filename)
+members = pd.read_csv(filename)
 
-split_names = df_members['bioname'].str.split(',', n=1, expand=True)
+split_names = members['bioname'].str.split(',', n=1, expand=True)
 
-df_members['lastname'] = split_names[0].str.strip()
-df_members['firstname'] = split_names[1].str.strip()
+members['lastname'] = split_names[0].str.strip()
+members['firstname'] = split_names[1].str.strip()
 
-df_members['party'] = df_members['party_code'].map({100: 1, 200: 0})
+members['party'] = members['party_code'].map({100: 1, 200: 0})
+
+# Republican = 0; Democrat = 1
 ```
 
-- Republicans: 0
-- Democrats: 1
-
-
-**Split Train/Val/Test**
-
+**Merge Datasets**
 ```python
 filtered = dataset.filter(lambda x: 2019 <= x['date].year <= 2021)
 
 sample_speech = filtered.select(range(100000)).shuffle(seed = 33).select(range(1000))
 
+
+```
+
+**Split Train/Val/Test**
+
+```python
 split1 = sample_speech.train_test_split(test_size = 0.3, seed = 33)
 
 train = split1["train"]
@@ -100,7 +101,7 @@ val = split2["train"]
 test = split2["test"]
 ```
 
-- Filtered dataset for 116th Congress, could use a more efficient filter process (currently min).
+- Filtered dataset for 116th Congress, could use a more efficient filter process (currently 7 min).
 - For now, we split 1000 speeches for simplicity. Can update later.
 
 **Store on Drive**
@@ -117,10 +118,71 @@ dataset.save_to_disk("/content/drive/MyDrive/my_dataset")
 - Layers: self-attention & feed-forward networks
 - Base: 12 layers & 110M parameters
 
-**Implementation**
 
 ```python
+from transformers import AutoTokenizer, AutoModel
+import torch
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score, classification_report
+from sklearn.model_selection import train_tests_split
+import numpy as np
+```
 
+```python
+model_name = "bert-base_uncased"
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+model = AutoModel.from_pretrained(model_name)
+model.eval()
+```
+
+```python
+texts = train['text']
+labels = train['party_code']
+
+X_train, X_temp, y_train, y_temp = train_test_split(texts, labels, test_size=0.3, random_state=42)
+X_val, X_test, y_val, y_test = train_test_split(X_temp, y_temp, test_size=0.5, random_state=42)
+```
+
+```python
+ef get_bert_embeddings(text_list, batch_size=16):
+    embeddings = []
+
+    for i in range(0, len(text_list), batch_size):
+        batch_texts = text_list[i:i+batch_size]
+        tokens = tokenizer(
+            batch_texts,
+            padding=True,
+            truncation=True,
+            max_length=128,
+            return_tensors='pt'
+        )
+        with torch.no_grad():
+            outputs = model(**tokens)
+            batch_embeddings = outputs.pooler_output  
+        embeddings.append(batch_embeddings)
+
+    embeddings = torch.cat(embeddings, dim=0)
+    return embeddings.numpy()  
+```
+
+```python
+X_train_emb = get_bert_embeddings(X_train)
+X_val_emb = get_bert_embeddings(X_val)
+X_test_emb = get_bert_embeddings(X_test)
+```
+
+```python
+clf = LogisticRegression(max_iter=1000)
+clf.fit(X_train_emb, y_train)
+```
+
+```python
+val_preds = clf.predict(X_val_emb)
+print("Validation Accuracy:", accuracy_score(y_val, val_preds))
+
+test_preds = clf.predict(X_test_emb)
+print("Test Accuracy:", accuracy_score(y_test, test_preds))
+print("\nClassification Report:\n", classification_report(y_test, test_preds))
 ```
 
 ## Comparison Models
