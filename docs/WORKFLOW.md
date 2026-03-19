@@ -26,87 +26,185 @@ git pull
 
 ## Data Collection
 
-**Congressional Speeches:**
-
+**News Articles**
 ```python
-import os
-from huggingface_hub import login
+# Liberal-Conservative News
+
 from google.colab import auth
 from getpass import getpass
+import os
+from huggingface_hub import login
 from datasets import load_dataset
 
 hf_token = getpass("Enter your Hugging Face token: ")
 
-dataset = load_dataset("Eugleo/us-congressional-speeches", use_auth_token = hf_token)
+bluejwu = load_dataset("bluejwu/liberal-and-conservative-news", token = hf_token)
 ```
-- Loading takes about 10 minutes
-- Need to access personal HuggingFace Token
-- More information on dataset [here](https://huggingface.co/datasets/Eugleo/us-congressional-speeches)
-
-**Congress Metadata:**
+- More info on this dataset [here](https://huggingface.co/datasets/bluejwu/liberal-and-conservative-news/viewer/default/train?p=422)
+- Will combine with another news dataset for more coverage of the liberal-conservtive spread
 
 ```python
-from google.colab import files
+import kagglehub
+
+path = kagglehub.dataset_download("davidmckinley/all-the-news-dataset")
+
 import pandas as pd
 
-bioid = files.upload()
+news = pd.read_csv(
+    f"{path}/all-the-news-2-1.csv",
+    encoding="latin1",
+    on_bad_lines="skip",
+    low_memory=True,
+    nrows=100000
+)
 ```
-- Download data locally, then choose file after running code
-- We use Member Ideology Data from VoteView (can be found [here](https://voteview.com/data))
-  - Data Type: Member Ideology
-  - Chamber: Both(House and Senate)
-  - Congress: 116th (2019-2021)
-  - File Format: CSV
+- More info on All the News dataset [here](https://www.kaggle.com/datasets/davidmckinley/all-the-news-dataset?select=all-the-news-2-1.csv)
 
+**Media Bias (AllSides)**
+```r
+# RStudio
+
+library(AllSideR)
+allsides_data <- allsides_data
+
+write.csv(allsides_data, "allsides.csv", row.names = FALSE)
+```
+- Using for Media Bias Score
+- Since the number of outlets in both datasets is small, we will just manually enter bias scores later.
+- More info on AllSides [here](https://github.com/favstats/AllSideR)
 
 ## Data Processing
 
-**Transform Metadata**
+**News Articles**
+```python
+from urllib.parse import urlparse
+
+def extract_outlet(example):
+    example['outlet'] = urlparse(example['url']).netloc.replace("www.","")
+    return example
+
+bluejwu['train'] = bluejwu['train'].map(extract_outlet)
+```
+- Simplifies url column in BlueJwu
 
 ```python
-filename = list(bioid.keys())[0]
+# All the News
 
-members = pd.read_csv(filename)
+news["source_clean"] = news["publication"]
 
-split_names = members['bioname'].str.split(',', n=1, expand=True)
+# BlueJwu
 
-members['lastname'] = split_names[0].str.strip()
-members['firstname'] = split_names[1].str.strip()
+bluejwu_pd = bluejwu['train'].to_pandas()
 
-members['party'] = members['party_code'].map({100: 1, 200: 0})
-
-# Republican = 0; Democrat = 1
+bluejwu_pd["source_clean"] = bluejwu_pd["outlet"].replace({
+    "foxnews.com": "Fox News",
+    "theamericanconservative.com": "The American Conservative",
+    "washingtontimes.com": "Washington Times",
+    "cnn.com": "CNN",
+    "msnbc.com": "MSNBC",
+    "nytimes.com": "New York Times"
+})
 ```
 
-**Merge Datasets**
+- Change publication column name in "All the News" for later merge
+- Convert BlueJwu from HF to pandas object for later merge
+- Rename publication names in BlueJwu for later merge 
+
 ```python
-filtered = dataset.filter(lambda x: 2019 <= x['date].year <= 2021)
-
-sample_speech = filtered.select(range(100000)).shuffle(seed = 33).select(range(1000))
-
-
+combined = pd.concat([news, bluejwu_pd], ignore_index=True)
 ```
+
+- Merges two datasets
+
+```python
+bias_map = {
+    "Fox News": "5",
+    "CNN": "2",
+    "MSNBC": "1",
+    "New York Times": "2",
+    "Reuters": "3",
+    "Vox": "1",
+    "Business Insider": "3",
+    "The American Conservative": "4",
+    "Washington Times": "4",
+    "Vice": "1",
+}
+
+combined["bias"] = combined["source_clean"].map(bias_map)
+```
+- Manually input bias scores for publications
+- Add scores to combined dataset
+- We can consider adding both labels (e.g. "left", "left-center") and continuous scores for each publication (we would still need to add numerical categorical values for BERT)
+
+```python
+allowed_sources = [
+    "Fox News",
+    "CNN",
+    "MSNBC",
+    "New York Times",
+    "Reuters",
+    "Vox",
+    "Business Insider",
+    "The American Conservative",
+    "Washington Times"
+]
+
+combined = combined[combined["source_clean"].isin(allowed_sources)]
+```
+ 
+ - Remove any publications without bias score
+ - We removed: Vice News, CNN Business, TMZ, and Hyperallergic
 
 **Split Train/Val/Test**
-
 ```python
-split1 = sample_speech.train_test_split(test_size = 0.3, seed = 33)
-
-train = split1["train"]
-temp = split1["test"]
-
-split2 = temp.train_test_split(test_size = 0.5, seed = 33)
-
-val = split2["train"]
-test = split2["test"]
+sampled_combined = combined.groupby("bias", group_keys=False).apply(lambda x: x.sample(n=333, random_state=42))
 ```
 
-- Filtered dataset for 116th Congress, could use a more efficient filter process (currently 7 min).
-- For now, we split 1000 speeches for simplicity. Can update later.
+- Take a sample of 1000 speeeches (can change later)
+- Sampling is stratified across bias score
+
+```python
+rom sklearn.model_selection import train_test_split
+
+train_news, temp_news = train_test_split(sampled_combined, 
+                                         test_size=0.3, 
+                                         random_state=33, 
+                                         stratify=sampled_combined["bias"])
+
+val_news, test_news = train_test_split(temp_news, 
+                                       test_size=0.5, 
+                                       random_state=33, 
+                                       stratify=temp_news["bias"])
+```
+- Create train, validation, and test pandas dataframes
+  - Train: 70%
+  - Val: 15%
+  - Test: 15%
+- Splitting is stratified by bias score
+
+```python
+y_train = train_news['bias'].tolist()
+y_val   = val_news['bias'].tolist()
+y_test  = test_news['bias'].tolist()
+
+X_train = X_train.fillna("").astype(str)
+X_val = X_val.fillna("").astype(str)
+X_test = X_test.fillna("").astype(str)
+```
+- Assign y to bias scores for set
+- Assign x as a string (needed for BERT Tokenizers)
+
+```python
+# Checks
+
+print("Total sampled articles:", len(sampled_combined))
+print("Train / Val / Test sizes:", len(X_train), len(X_val), len(X_test))
+print("Bias distribution in train:", train_news['bias'].value_counts())
+```
 
 **Store on Drive**
 ```python
-dataset.save_to_disk("/content/drive/MyDrive/my_dataset")
+dataset.save_to_disk("/content/drive/MyDrive/INPUT")
 ```
 
 ## Baseline Model
@@ -120,6 +218,8 @@ dataset.save_to_disk("/content/drive/MyDrive/my_dataset")
 
 
 ```python
+# Imports
+
 from transformers import AutoTokenizer, AutoModel
 import torch
 from sklearn.linear_model import LogisticRegression
@@ -129,6 +229,8 @@ import numpy as np
 ```
 
 ```python
+# Get pretrained model
+
 model_name = "bert-base_uncased"
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 model = AutoModel.from_pretrained(model_name)
@@ -136,15 +238,7 @@ model.eval()
 ```
 
 ```python
-texts = train['text']
-labels = train['party_code']
-
-X_train, X_temp, y_train, y_temp = train_test_split(texts, labels, test_size=0.3, random_state=42)
-X_val, X_test, y_val, y_test = train_test_split(X_temp, y_temp, test_size=0.5, random_state=42)
-```
-
-```python
-ef get_bert_embeddings(text_list, batch_size=16):
+def get_bert_embeddings(text_list, batch_size=16):
     embeddings = []
 
     for i in range(0, len(text_list), batch_size):
@@ -158,17 +252,21 @@ ef get_bert_embeddings(text_list, batch_size=16):
         )
         with torch.no_grad():
             outputs = model(**tokens)
-            batch_embeddings = outputs.pooler_output  
+            batch_embeddings = outputs.pooler_output
         embeddings.append(batch_embeddings)
 
     embeddings = torch.cat(embeddings, dim=0)
-    return embeddings.numpy()  
+    return embeddings.numpy()
 ```
 
 ```python
-X_train_emb = get_bert_embeddings(X_train)
-X_val_emb = get_bert_embeddings(X_val)
-X_test_emb = get_bert_embeddings(X_test)
+X_train_list = X_train.tolist()
+X_val_list   = X_val.tolist()
+X_test_list  = X_test.tolist()
+
+X_train_emb = get_bert_embeddings(X_train_list)
+X_val_emb   = get_bert_embeddings(X_val_list)
+X_test_emb  = get_bert_embeddings(X_test_list)
 ```
 
 ```python
