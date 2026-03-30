@@ -79,3 +79,28 @@
 - **How to run evaluation**:
 - **Where you log results** (files/paths):
 
+## Blog
+### Background
+
+Machine learning models can represent meaning in numerous ways, and understanding exactly which way meaning is being represented in different cases is a key challenge in natural language processing. More modern models, including BERT, do a good job across a wide range of tasks, but there still exists internal representations that are  difficult to interpret. 
+
+Meaning is multifaceted in real-world settings. We see this in politcal contexts, for instance. Two statements can discuss the same topic, such as global affairs or immigraion, but express oppossing viewpoints. A well-structered representation should be able to distinguish between the topic being discussed and the actual position that is being taken. 
+
+Though, it is not super clear whether standard text representations are successful at separating these things. Instead, models could easily just group sentences together after determining that they are about the same topic, regardless if they having oppossing viewpoints. This leads us to a crucial question of if modern language models are really able to capture semantic meaning, or if the specific parts of language, such as topic and stance, are conflated. 
+
+This idea is very relevent in the political world. Determining and separating viewpoints based on stance is especially crucial for media analysis, misinformation detection, and other applications. If the embeddings can not properly separate stance of opinion, ideological differences may be harder to determine down the road. 
+
+### Literature Review
+
+Common approaches of text representation, such as bag-of-words and TF-IDF. Methods like these are skilled at detemerming what topic the sentence is introducing, but not very skilled at understanding context or meaning. Due to this, there is an issue with separting sentences with similar words but have different ideas. 
+
+A recent model called BERT creates contextual embeddings, which means the representation of a word depends on the other words. Because of this, models like BERT and similar models do a much better job at tasks like sentiment analysis and text classification, due to more of the meaning in language being evaluated. 
+
+It is great that these newer models work well, but researchers are still looking into how they represent meaning internally. One approach is by looking at the geometry of the embedding space. The goal is to see how close or far different parts of text are from each other. Generally, texts with similar texts tend to reside closer together. 
+
+Work like this tends to focus on general similarity, not as much specific differences like political stance. Many studies focus on predicting things like party affiliation or bias, measuring success through accuracy in regards to politcal text. The part that is more often left out though is how models organize different meaning or why the model is making certain predictions. 
+
+Consequently, it remains unclear whether models can separate topic from stance. This idea is especially important in politcal language as people often talk about the same issue but do not have the same viewpoint.
+
+This project builds on past work by focusing more on how exactly text is organized in embedding space, and testing whether models actually separate topic and stance. 
+
