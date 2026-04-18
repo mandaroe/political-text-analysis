@@ -3,20 +3,21 @@
 # ------
 
 import os
-from datasets import load_dataset
-from urllib.parse import urlparse
-import kagglehub
 import pandas as pd
-from google.colab import files
 
-# ------ 
-# Data
+# ------
+# Config
 # ------
 
-path = kagglehub.dataset_download("gandpablo/news-articles-for-political-bias-classification")
+DATA_PATH = "data/raw/bias_clean.csv"
+OUTPUT_PATH = "data/processed/filtered_news.csv"
+
+# ------ 
+# Load Data
+# ------
 
 news = pd.read_csv(
-    f"{path}/bias_clean.csv",
+    DATA_PATH,
     encoding="latin1",
     on_bad_lines="skip",
     low_memory=True,
@@ -36,3 +37,12 @@ allowed_topics = [
 ]
 
 news = news[news['topic'].isin(allowed_topics)]
+
+# ------
+# Save
+# ------
+
+os.makedirs("data/processed", exist_ok=True)
+news.to_csv(OUTPUT_PATH, index=False)
+
+print(f"Saved processed data to {OUTPUT_PATH}")

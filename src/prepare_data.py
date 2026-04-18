@@ -1,227 +1,113 @@
-import os
-import sys
-import logging
-import argparse
-import numpy as np
 import pandas as pd
-from pathlib import Path
+import os
+from sklearn.model_selection import train_test_split
 
-from one.api import ONE
+# -------
+# Sampling
+# -------
 
-from datasets import DatasetDict, DatasetInfo
+def stratified_sample_total(df, 
+                            topic_col='topic', 
+                            bias_col='bias',
+                            total_n=1250,
+                            random_state=42):
+    topics = df[topic_col].unique()
+    n_topics = len(topics)
+    n_per_topic = total_n // n_topics
 
-from utils.ibl_data_utils import (
-    prepare_data,
-    select_brain_regions,
-    list_brain_regions,
-    bin_spiking_data,
-    bin_behaviors,
-    align_data
-)
-from utils.dataset_utils import create_dataset, upload_dataset
-from utils.preprocess_lfp import prepare_lfp, featurize_lfp
+    all_biases_in_df = df[bias_col].unique()
+    n_all_biases = len(all_biases_in_df)
 
-logging.basicConfig(level=logging.INFO) 
+    sampled_list = []
 
-np.random.seed(42)
+    for topic, group in df.groupby(topic_col):
+        total_in_topic = len(group)
 
-# ------ 
-# SET UP
-# ------
-ap = argparse.ArgumentParser()
-ap.add_argument("--base_path", type=str, default="EXAMPLE_PATH")
-ap.add_argument("--huggingface_org", type=str, default="ibl-repro-ephys")
-ap.add_argument("--use_lfp", action="store_true")
-ap.add_argument("--n_sessions", type=int, default=1)
-ap.add_argument("--n_workers", type=int, default=1)
-ap.add_argument("--eid", type=str)
-args = ap.parse_args()
+        if total_in_topic <= n_per_topic:
+            sampled_list.append(group)
+        else:
+            target_n_per_bias = n_per_topic // n_all_biases
 
-if args.n_sessions == 1:
-    if args.eid is None:
-        raise ValueError("Session EID is required.")
-    else:
-        eids = [args.eid]
-else:
-    PROJ_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    with open(f"{PROJ_DIR}/data/eids.txt") as file:
-        eids = [line.rstrip() for line in file][:args.n_sessions]
+            n_samples_per_bias_dict = {}
+            for bias_cat in all_biases_in_df:
+                available_count = len(group[group[bias_col] == bias_cat])
+                n_samples_per_bias_dict[bias_cat] = min(available_count, target_n_per_bias)
+            
+            current_total = sum(n_samples_per_bias_dict.values())
+            remaining = n_per_topic - current_total
 
-params = {
-    "interval_len": 2, 
-    "binsize": 0.02, 
-    "single_region": False,
-    "align_time": 'stimOn_times', 
-    "time_window": (-.5, 1.5), 
-    "fr_thresh": 0.2
-}
+            eligible_biases = [
+                b for b in all_biases_in_df
+                if len(group[group[bias_col] == b]) > n_samples_per_bias_dict[b]
+            ]
 
-beh_names = [
-    "choice", "reward", "block",
-    "wheel-speed", "whisker-motion-energy", 
-]
+            idx = 0
+            while remaining > 0 and eligible_biases:
+                b = eligible_biases[idx % len(eligible_biases)]
 
-DYNAMIC_VARS = list(filter(lambda x: x not in ["choice", "reward", "block"], beh_names))
+                if len(group[group[bias_col] == b]) > n_samples_per_bias_dict[b]:
+                    n_samples_per_bias_dict[b] += 1
+                    remaining -= 1
+                else:
+                    eligible_biases.remove(b)
+
+                idx += 1 if eligible_biases else 0
+
+            sampled_topic = pd.concat([
+                group[group[bias_col] == b].sample(
+                    n=n_samples_per_bias_dict[b],
+                    random_state=random_state
+                )
+                for b in n_samples_per_bias_dict
+                if n_samples_per_bias_dict[b] > 0
+            ])
+
+            sampled_list.append(sampled_topic)
+
+    return pd.concat(sampled_list).reset_index(drop=True)
 
 # ---------------
-# PREPROCESS DATA
+# Main Pipeline
 # ---------------
-one = ONE(
-    base_url="https://openalyx.internationalbrainlab.org",
-    password="international", 
-    silent=True,
-    cache_dir=args.base_path
-)
 
-final_eids = []
-for eid_idx, eid in enumerate(eids):
+def main():
+    news = pd.read_csv("data/processed/clean_news.csv")
 
-    # if os.path.exists(f"{args.base_path}/{eid}_aligned"):
-    #     logging.info(f"The dataset {eid}_aligned already exists.")
-    #     continue
+    sampled_news = stratified_sample_total(news, total_n=1250)
+
+    sampled_news["strata"] = (
+        sampled_news["topic"].astype(str) + "_" + sampled_news["bias"].astype(str)
+    )
+
+    train, temp = train_test_split(
+        sampled_news,
+        test_size=0.3,
+        stratify=sampled_news["strata"],
+        random_state=42
+    )
+
+    val, test = train_test_split(
+        temp,
+        test_size=0.5,
+        stratify=temp["strata"],
+        random_state=42
+    )
+
+    train = train.drop(columns=["strata"])
+    val = val.drop(columns=["strata"])
+    test = test.drop(columns=["strata"])
+
+    os.makedirs("data/processed", exist_ok=True)
+
+    sampled_news.drop(columns=["strata"]).to_csv(
+        "data/processed/sampled_news.csv", index=False
+    )
     
-    logging.info(f"EID {eid}")
+    train.to_csv("data/processed/train.csv", index=False)
+    val.to_csv("data/processed/val.csv", index=False)
+    test.to_csv("data/processed/test.csv", index=False)
 
-    neural_dict, behave_dict, meta_dict, trials_dict, _ = prepare_data(
-        one, eid, params, n_workers=args.n_workers
-    )
 
-    if neural_dict is None:
-        logging.info(f"Skip EID {eid} Due to Missing Spike Data!")
-        continue
+if __name__ == "__main__":
+    main()
 
-    regions, beryl_reg = list_brain_regions(neural_dict, **params)
-    region_cluster_ids = select_brain_regions(neural_dict, beryl_reg, regions, **params)
-
-    bin_spikes, clusters_used_in_bins = bin_spiking_data(
-        region_cluster_ids, 
-        neural_dict, 
-        trials_df=trials_dict["trials_df"], 
-        n_workers=args.n_workers, 
-        **params
-    )
-
-    logging.info(f"Binned Spike Data: {bin_spikes.shape}")
-
-    # Keep responsive neurons
-    mean_fr = bin_spikes.sum(1).mean(0) / params["interval_len"]
-    keep_unit_idxs = np.argwhere(mean_fr > 1/params["fr_thresh"]).flatten()
-    bin_spikes = bin_spikes[..., keep_unit_idxs]
-    logging.info(
-        f"# Responsive Units: {bin_spikes.shape[-1]} / {len(mean_fr)}"
-    )
-
-    meta_dict["cluster_regions"] = [meta_dict["cluster_regions"][idx] for idx in keep_unit_idxs]
-    meta_dict["cluster_channels"] = [meta_dict["cluster_channels"][idx] for idx in keep_unit_idxs]
-    meta_dict["cluster_depths"] = [meta_dict["cluster_depths"][idx] for idx in keep_unit_idxs]
-    meta_dict["good_clusters"] = [meta_dict["good_clusters"][idx] for idx in keep_unit_idxs]
-    meta_dict["uuids"] = [meta_dict["uuids"][idx] for idx in keep_unit_idxs]
-    # meta_dict["cluster_qc"] = {
-    #     k: np.asarray(v)[keep_unit_idxs].tolist() for k, v in meta_dict["cluster_qc"].items()
-    # }
-
-    bin_beh, beh_mask = bin_behaviors(
-        one, 
-        eid, 
-        DYNAMIC_VARS, 
-        trials_df=trials_dict["trials_df"], 
-        allow_nans=True, 
-        n_workers=args.n_workers, 
-        **params,
-    )
-
-    if args.use_lfp:
-        lfp_prec = prepare_lfp(one, eid, dead_channel_threshold=0., **params)
-        all_psd = featurize_lfp(
-            lfp_prec, bin_size=int(params["interval_len"]/params["binsize"])
-        )
-        bin_lfp = []
-        for lfp_band in all_psd.values():
-            bin_lfp.append(lfp_band)
-        bin_lfp = np.concatenate(bin_lfp, -1)
-        logging.info(f"Binned LFP Data: {bin_lfp.shape}")
-    else:
-        bin_lfp = None
-
-    try:
-        align_bin_spikes, align_bin_beh, align_bin_lfp, target_mask, bad_trial_idxs = align_data(
-            bin_spikes, 
-            bin_beh, 
-            bin_lfp, 
-            list(bin_beh.keys()), 
-            trials_dict["trials_mask"], 
-        )
-    except ValueError as e:
-        logging.info(f"Skip EID {eid} due to error: {e}")
-        continue
-
-    if "whisker-motion-energy" not in align_bin_beh:
-        logging.info(f"Skip EID {eid} due to missing whisker data.")
-        continue
-
-    # Data partition (train: 0.7 val: 0.1 test: 0.2)
-    num_trials = len(align_bin_spikes)
-    trial_idxs = np.random.choice(np.arange(num_trials), num_trials, replace=False)
-
-    trial_mask = np.array(target_mask).astype(bool).tolist()
-    trials_dict['trials_df'] = trials_dict['trials_df'][trial_mask]
-    intervals = np.vstack([
-        trials_dict['trials_df'][params["align_time"]] + params["time_window"][0],
-        trials_dict['trials_df'][params["align_time"]] + params["time_window"][1]
-    ]).T
-    intervals = intervals[trial_idxs]
-
-    train_idxs = trial_idxs[:int(0.7*num_trials)]
-    val_idxs = trial_idxs[int(0.7*num_trials):int(0.8*num_trials)]
-    test_idxs = trial_idxs[int(0.8*num_trials):]
-
-    train_beh, val_beh, test_beh = {}, {}, {}
-    for beh in align_bin_beh.keys():
-        train_beh.update({beh: align_bin_beh[beh][train_idxs]})
-        val_beh.update({beh: align_bin_beh[beh][val_idxs]})
-        test_beh.update({beh: align_bin_beh[beh][test_idxs]})
-
-    train_dataset = create_dataset(
-        align_bin_spikes[train_idxs], 
-        eid, 
-        params,
-        meta_data=meta_dict,
-        binned_behaviors=train_beh, 
-        binned_lfp=None if align_bin_lfp is None else align_bin_lfp[train_idxs]
-    )
-
-    val_dataset = create_dataset(
-        align_bin_spikes[val_idxs], 
-        eid, 
-        params,
-        meta_data=meta_dict,
-        binned_behaviors=val_beh, 
-        binned_lfp=None if align_bin_lfp is None else align_bin_lfp[val_idxs]
-    )
-
-    test_dataset = create_dataset(
-        align_bin_spikes[test_idxs], 
-        eid, 
-        params,
-        meta_data=meta_dict,
-        binned_behaviors=test_beh, 
-        binned_lfp=None if align_bin_lfp is None else align_bin_lfp[test_idxs]
-    )
-
-    dataset = DatasetDict(
-        {"train": train_dataset, "val": val_dataset, "test": test_dataset}
-    )
-    logging.info(dataset)
-
-    # upload_dataset(dataset, org=args.huggingface_org, eid=f"{eid}_aligned")
-    dataset.save_to_disk(f"{args.base_path}/{eid}_aligned")
-
-    logging.info(f"Downloaded EID: {eid}")
-    logging.info(f"Progress: {eid_idx+1} / {len(eids)} sessions downloaded")
-
-    final_eids.append(eid)
-
-logging.info(f"Successfully downloaded EIDs: ")
-
-for eid in final_eids:
-    print(eid)
