@@ -348,19 +348,15 @@ for layer in range(13):
     X_tr = train_layers[layer]
     X_te = test_layers[layer]
 
-    # Standardize
     scaler = StandardScaler()
     X_tr = scaler.fit_transform(X_tr)
     X_te = scaler.transform(X_te)
 
-    # Train probe
     clf = LogisticRegression(max_iter=1000, class_weight="balanced")
     clf.fit(X_tr, y_train)
 
-    # Predict
     preds = clf.predict(X_te)
 
-    # Evaluate
     f1 = f1_score(y_test, preds, average="macro")
     layer_f1_scores.append(f1)
 
