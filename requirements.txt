@@ -4,3 +4,9 @@ scikit-learn
 torch
 transformers
 datasets
+torch
+torch.nn
+torch.optim
+sklearn.metrics
+scipy
+joblib
