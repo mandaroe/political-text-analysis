@@ -24,6 +24,10 @@ python train.py --task topic
 
 ## Demo
 
+Explore the trained BERT model and some more information on our project [here]{}
+
+- Feel free to skip to Demo Tab for the interative elements
+
 ## Features
 
 ## Tech Stack

@@ -3,62 +3,47 @@
 ## 1) Project Overview
 
 - **Title:** Learning to Read Politics: Machine Learning and the Distinction between Topic and Stance
-- **Team:** Sophia Abate & Amanda Rolle
+- **Team:** Amanda Rolle & Sophia Abate
 - **Problem statement:**
     Do standard text representation conflate topic similarity and stance?
 - **Hypothesis:** 
 
-## 2) Related Work (Short)
+## 2) Related Work
 
-- 3-5 bullets on prior papers/blogs/repos you build on.
+-  Devlin, J., Chang, M.-W., Lee, K., & Toutanova, K. (2019). BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding. In Proceedings of the 2019 Conference of the North American Chapter of the ACL: Human Language Technologies, Volume 1 (Long and Short Papers), 4171–4186. https://doi.org/10.18653/v1/N19-1423
+- Eger, S., Gao, Y., Peyrard, M., Zhao, W., & Hovy, E. (2020). Proceedings of the First Workshop on Evaluation and Comparison of NLP Systems. Association for Computational Linguistics. https://doi.org/10.18653/v1/2020.eval4nlp-1.0
+- Yacouby, R., & Axman, D. (2020). Probabilistic Extension of Precision, Recall, and F1 Score for More Thorough Evaluation of Classification Models. In Proceedings of the First Workshop on Evaluation and Comparison of NLP Systems, 79–91. https://doi.org/10.18653/v1/2020.eval4nlp-1.9
 
 ## 3) Data
 
 - **Dataset(s):**
-  - OpenGov uscongress: Congressional Record collection for a given session or date range. Used in this to retrieve speeches and speakers.
-  - AllSides Media Bias: Categorical political leaning rating of media news bias on a scale of: left, left-center, center, right-center, right.
-  - Congress: Congression collection of actions, bills, nomination, and more more. Used in this study for member identification.
+    We use the “News Articles for Political Bias Classification” Corpus, which contains approximately 10,000 articles published between 2014 and 2025. The dataset was created using NewsReader AI, which scraped articles from AllSides, a platform that provides media bias ratings for news outlets based on surveys, multi-partisan analysis, editorial review, and user feedback. AllSides ratings are reported on a 6-point Likert scale and continuously updated as new data becomes available. The dataset was then cleaned by the creator, who mapped the original 6-point ratings to a 5-point scale: left, left-leaning, center, right-leaning, right.
+
+    For our analysis, we focus on the following variables:
+        - topic: the subject category of each article, covering wide range of news domains.
+        - bias: the political bias label, which serves as the target variable for NLP modeling and classification using large language models.
+
   
 - **How to access:**
-  - [US-Congressional-Speeches](https://huggingface.co/datasets/Eugleo/us-congressional-speeches)
-  
+  - [News Articles fro Political Bias Classification](https://www.kaggle.com/datasets/gandpablo news-articles-for-political-bias-classification)
+  - More information on AllSides [here](https://www.allsides.com/media-bias)
 - **License/ethics**:
+
+
 - **Train/val/test split**:
+    We applied a stratified sampling approach to the full dataset. We aimed to sample approximately 1,250 articles, distributing them evenly across topics while maintaining a roughly equal representation of bias categories within each topic. For each topic, we calculated a target number of articles per bias category and sampled accordingly, taking all available articles when a category had fewer than the target. Any remaining quota for a topic was distributed among bias categories with available articles to maximize balance. This procedure ensures that both topic and bias distributions are reasonably even, reducing potential sampling bias and providing a representative subset for NLP modeling. Fig 1. is a cross table of the resulting sample.
+
 
 ## 4) Baseline
 
 - **Baseline model**: (name + key params)
-    - Topic Frequency-Inverse Document Frequency (TF-IDF) & Logistic Regression
-        - ngram_range: 
-        - max_features:
-        - min_df/max_df:
-        - use_idf:
-        - smooth_idf:
-        - sublinear_tf:
-        - penalty:
-        - solver:
-        - regularization:
-    - Stance-DW 
-        - dim: embedding size
-        - window size:
-        - negative sampling:
-        - hierarchial softmax:
-        - learning rate:
-        - epochs:
-        - Stance weighting:
+    
 - **Baseline metrics**:
-    - TF-IDF:
         - Accuracy
-        - Confusion Matrix
-        - Macro vs Micro F1-score
-        - ROC-AUC
-    - Stance-DW
-        - Same as TF-IDF (for classification metrics)
-        - Cosine similarity
-        - Silhouette score
-        - Adjusted Rand Index (ARI)
+        - Precison
+        - Recall
+        - Macro F1-score
         - t-SNE
-        - UMAP
 - **Why this is a fair baseline**:
 
 ## 5) Proposed Method
