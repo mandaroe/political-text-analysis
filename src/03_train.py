@@ -6,6 +6,7 @@ import torch.optim as optim
 from transformers import BertTokenizer, BertModel
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 import argparse
+from sklearn.linear_model import LogisticRegression
 
 # -----
 # Setup
@@ -73,7 +74,7 @@ def get_bert_embeddings(text_list, batch_size=16):
             batch_texts,
             padding=True,
             truncation=True,
-            max_length=128,
+            max_length=512,
             return_tensors='pt'
         ).to(device)
 
@@ -102,13 +103,13 @@ num_labels = len(label_map)
 model = nn.Linear(768, num_labels).to(device)
 
 criterion = nn.CrossEntropyLoss()
-optimizer = optim.Adam(model.parameters(), lr=1e-3)
+optimizer = optim.Adam(model.parameters(), lr=2e-5)
 
 # ---------
 # Training Loop
 # ---------
 
-for epoch in range(10):
+for epoch in range(3):
     model.train()
 
     optimizer.zero_grad()
