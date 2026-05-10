@@ -1,6 +1,25 @@
 import pandas as pd
 import os
 from sklearn.model_selection import train_test_split
+from ftfy import fix_text
+
+# ---------------
+# Cleaning Text
+# ---------------
+
+def clean_text(text):
+    if not isinstance(text, str):
+        return False
+      
+    corrupt_ratio = sum(1 for c in text if ord(c) > 127) / max(len(text), 1)
+
+    if len(text.split()) < 50:
+      return False
+
+    if corrupt_ratio > 0.3:
+      return False
+
+    return True
 
 # -------
 # Sampling
