@@ -17,6 +17,12 @@ from sklearn.manifold import TSNE
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 MODEL_NAME = "bert-base-uncased"
 
+np.random.seed(42)
+torch.manual_seed(42)
+
+if torch.cuda.is_available():
+    torch.cuda.manual_seed_all(42)
+
 # -----------------
 # Experiment Config
 # -----------------
@@ -28,6 +34,16 @@ args = parser.parse_args()
 
 TASK = args.task
 MODE = args.mode
+
+print("\n" + "=" * 70)
+print("🧠 BERT PROBING EXPERIMENT")
+print("=" * 70)
+
+print(f"Task      : {TASK}")
+print(f"Mode      : {MODE}")
+print(f"Model     : {MODEL_NAME}")
+print(f"Device    : {device}")
+print("=" * 70 + "\n")
 
 # ----------------
 # Load Data
@@ -48,9 +64,9 @@ label_map = {label: i for i, label in enumerate(labels)}
 for df in [train, val, test]:
     df["label"] = df[label_col].map(label_map)
 
-y_train = torch.tensor(train["label"].values)
-y_val = torch.tensor(val["label"].values)
-y_test = torch.tensor(test["label"].values)
+y_train = train["label"].values
+y_val = val["label"].values
+y_test = test["label"].values
 
 y_train_np = y_train.numpy()
 y_test_np = y_test.numpy()
@@ -103,7 +119,7 @@ def extract_cls_embeddings(texts, model, tokenizer, batch_size=16):
 # -------------------------
 
 train_layers = extract_cls_embeddings(train["page_text"].tolist(), model, tokenizer)
-val_layers   = extract_cls_embeddings(val['page_text'].tolist(), frozen_bert, tokenizer)
+val_layers   = extract_cls_embeddings(val['page_text'].tolist(), model, tokenizer)
 test_layers = extract_cls_embeddings(test["page_text"].tolist(), model, tokenizer)
 
 # -------------------------
@@ -114,7 +130,7 @@ layer_metrics = {
     "layer": [],
     "accuracy": [],
     "f1": [],
-    "precison": [],
+    "precision": [],
     "recall": []
 }
 
@@ -123,6 +139,10 @@ layer_metrics = {
 # -------------------------
 
 for layer_idx in range(13):
+    
+    print("\n" + "=" * 50)
+    print(f"Layer {layer_idx}")
+    print("=" * 50)
 
     X_tr = train_layers[layer_idx]
     X_te = test_layers[layer_idx]
@@ -130,10 +150,6 @@ for layer_idx in range(13):
     scaler = StandardScaler()
     X_tr = scaler.fit_transform(X_tr)
     X_te = scaler.transform(X_te)
-
-    # -----------------
-    # Linear probe
-    # -----------------
 
     clf = LogisticRegression(max_iter=1000, class_weight="balanced")
     clf.fit(X_tr, y_train_np)
@@ -143,13 +159,19 @@ for layer_idx in range(13):
     acc = accuracy_score(y_test_np, preds)
     f1 = f1_score(y_test_np, preds, average="macro", zero_division=0)
     prec = precision_score(y_test_np, preds, average="macro", zero_division=0)
-    rec = recall_score)y_test_np, preds, average="macro", zero_division=0)
+    rec = recall_score(y_test_np, preds, average="macro", zero_division=0)
 
     layer_metrics["layer"].append(layer_idx)
     layer_metrics["accuracy"].append(acc)
     layer_metrics["f1"].append(f1)
-    layer_metrics["f1"].append(prec)
-    layer_metrics["rec"].append(rec)
+    layer_metrics["precision"].append(prec)
+    layer_metrics["recall"].append(rec)
+    
+    print(f"Train Accuracy : {train_acc:.3f}")
+    print(f"Test Accuracy  : {test_acc:.3f}")
+    print(f"F1 Score       : {f1:.3f}")
+    print(f"Precision      : {prec:.3f}")
+    print(f"Recall         : {rec:.3f}")
 
 
 # -------------------------
