@@ -126,6 +126,12 @@ def main():
     val.to_csv("data/processed/val.csv", index=False)
     test.to_csv("data/processed/test.csv", index=False)
 
+    print("\n📊 Dataset Sizes")
+    print("-" * 40)
+    print(f"Train: {len(train)}")
+    print(f"Val  : {len(val)}")
+    print(f"Test : {len(test)}")
+
 
 if __name__ == "__main__":
     main()
