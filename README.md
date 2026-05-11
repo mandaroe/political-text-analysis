@@ -23,16 +23,13 @@ python train.py --task topic
 ```
 
 ## Demo
+Explore layer-wise projections of BERT's pretrained emebeddings!
 
-Explore the trained BERT model and some more information on our project [here]{}
+https://huggingface.co/spaces/mandaroe/Ideological-Projection-Demo
 
-- Feel free to skip to Demo Tab for the interative elements
-
-## Features
+![Demo Screenshot](figures/demo.gif)
 
 ## Tech Stack
 - Python 3.11
-
-## Credits
 
 
