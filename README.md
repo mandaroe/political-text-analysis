@@ -22,10 +22,8 @@ python train.py --task bias
 python train.py --task topic
 ```
 
-## Demo
-Explore layer-wise projections of BERT's pretrained emebeddings!
-
-https://huggingface.co/spaces/mandaroe/Ideological-Projection-Demo
+## ✨Demo✨
+Explore layer-wise projections of BERT's pretrained emebeddings [here](https://huggingface.co/spaces/mandaroe/Ideological-Projection-Demo)!
 
 ![Demo Screenshot](figures/demo.gif)
 
